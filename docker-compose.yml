@@ -1,0 +1,39 @@
+networks:
+  webappdockernetwork:
+
+volumes:
+  sqlvolume:
+
+services:
+  
+  # sql server configuration
+  webappdocker.database:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    container_name: webappdocker.database
+    ports:
+      - "11433:1433"
+    environment:
+      SA_PASSWORD: "Password12345!"
+      ACCEPT_EULA: "Y"
+    restart: always
+    volumes:
+      - sqlvolume:/var/opt/mssql
+    networks:
+      - webappdockernetwork
+
+  # must have "networks" to connect with other container
+  webappdocker:
+    image: ${DOCKER_REGISTRY-}webappdocker
+    build:
+      context: .
+      dockerfile: WebAppDocker/Dockerfile
+    ports:
+        - 5000:5000
+        - 5001:5001
+    depends_on:
+        - webappdocker.database
+    environment:
+        - ConnectionStrings__Database=Server=webappdocker.database;Database=WebAppDocker;User Id=sa;Password=Password12345!;Trust Server Certificate=True;
+    networks:
+        - webappdockernetwork
+
